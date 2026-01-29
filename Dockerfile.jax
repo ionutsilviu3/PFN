@@ -1,0 +1,41 @@
+# Dockerfile for JAX with CUDA 12 support  
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV XLA_PYTHON_CLIENT_PREALLOCATE=false
+ENV XLA_PYTHON_CLIENT_ALLOCATOR=platform
+
+# Install Python 3.10 and dependencies
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3.10-dev \
+    python3-pip \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN python3.10 -m pip install --upgrade pip
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy requirements file
+COPY requirements_jax.txt /workspace/
+
+# Install JAX with CUDA 12 support
+RUN pip install --upgrade "jax[cuda12]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+# Install other Python packages
+RUN pip install --no-cache-dir -r requirements_jax.txt
+
+# Copy data before scripts
+COPY data /workspace/data
+
+# Copy project file
+COPY run_jax.py /workspace/
+
+# Default command
+CMD ["python3.10", "run_jax.py"]
